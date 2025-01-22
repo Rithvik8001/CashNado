@@ -2,10 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { PrismaClient } from "@prisma/client";
-
-type Budget = Awaited<ReturnType<PrismaClient["budget"]["findFirst"]>>;
-type Expense = Awaited<ReturnType<PrismaClient["expense"]["findFirst"]>>;
+import type { Budget, Expense } from "@prisma/client/edge";
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -36,11 +33,11 @@ export async function GET(): Promise<NextResponse> {
     });
 
     const totalBudget = budgets.reduce(
-      (acc: number, budget: Budget) => acc + budget.amount,
+      (acc: number, budget: Budget) => acc + (budget?.amount ?? 0),
       0
     );
     const totalExpenses = expenses.reduce(
-      (acc: number, expense: Expense) => acc + expense.amount,
+      (acc: number, expense: Expense) => acc + (expense?.amount ?? 0),
       0
     );
 
@@ -50,7 +47,7 @@ export async function GET(): Promise<NextResponse> {
       remainingBudget: totalBudget - totalExpenses,
     });
   } catch (error) {
-    console.error("Error in /api/stats:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("[STATS_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }

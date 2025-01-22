@@ -2,7 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client/edge";
 
 type Expense = Awaited<ReturnType<PrismaClient["expense"]["findFirst"]>>;
 
