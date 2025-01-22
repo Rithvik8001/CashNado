@@ -3,13 +3,18 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type ChartExpense = {
+interface ChartExpense {
   id: string;
   amount: number;
   date: Date;
-};
+}
 
-export async function GET(): Promise<NextResponse> {
+interface ChartData {
+  labels: string[];
+  expenses: number[];
+}
+
+export async function GET(): Promise<NextResponse<ChartData>> {
   try {
     const supabase = createRouteHandlerClient({
       cookies: cookies,
@@ -26,7 +31,7 @@ export async function GET(): Promise<NextResponse> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const expenses = await prisma.expense.findMany({
+    const expenses: ChartExpense[] = await prisma.expense.findMany({
       select: {
         id: true,
         amount: true,
@@ -59,14 +64,14 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Sum up expenses by date
-    expenses.forEach((expense) => {
+    expenses.forEach((expense: ChartExpense) => {
       const dateStr = expense.date.toISOString().split("T")[0];
       const currentAmount = dailyExpenses.get(dateStr) || 0;
       dailyExpenses.set(dateStr, currentAmount + expense.amount);
     });
 
     // Fill the data array in the same order as labels
-    labels.forEach((label) => {
+    labels.forEach((label: string) => {
       data.push(dailyExpenses.get(label) || 0);
     });
 

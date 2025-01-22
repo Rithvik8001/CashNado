@@ -3,15 +3,15 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Expense = {
+interface RecentExpense {
   id: string;
   title: string;
   amount: number;
   category: string;
   date: Date;
-};
+}
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse<RecentExpense[]>> {
   try {
     const supabase = createRouteHandlerClient({
       cookies: cookies,
@@ -25,7 +25,7 @@ export async function GET(): Promise<NextResponse> {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const expenses = await prisma.expense.findMany({
+    const expenses: RecentExpense[] = await prisma.expense.findMany({
       where: {
         budget: {
           userId: session.user.id,

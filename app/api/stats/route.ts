@@ -3,15 +3,21 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Budget = {
+interface Budget {
   amount: number;
-};
+}
 
-type Expense = {
+interface Expense {
   amount: number;
-};
+}
 
-export async function GET(): Promise<NextResponse> {
+interface StatsData {
+  totalBudget: number;
+  totalExpenses: number;
+  remainingBudget: number;
+}
+
+export async function GET(): Promise<NextResponse<StatsData>> {
   try {
     const supabase = createRouteHandlerClient({
       cookies: cookies,
@@ -25,7 +31,7 @@ export async function GET(): Promise<NextResponse> {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const budgets = await prisma.budget.findMany({
+    const budgets: Budget[] = await prisma.budget.findMany({
       where: {
         userId: session.user.id,
       },
@@ -34,7 +40,7 @@ export async function GET(): Promise<NextResponse> {
       },
     });
 
-    const expenses = await prisma.expense.findMany({
+    const expenses: Expense[] = await prisma.expense.findMany({
       where: {
         budget: {
           userId: session.user.id,
