@@ -53,7 +53,26 @@ const Dashboard = () => {
         router.push("/sign-in");
       } else {
         setUser(session.user);
+        await checkBudgets(session.user.id);
+      }
+    };
+
+    const checkBudgets = async (userId: string) => {
+      try {
+        const { data: budgets } = await supabase
+          .from("budgets")
+          .select("id")
+          .eq("userId", userId);
+
+        if (!budgets || budgets.length === 0) {
+          router.push("/dashboard/budgets");
+          return;
+        }
+
         await fetchDashboardData();
+      } catch (error) {
+        console.error("Error checking budgets:", error);
+        router.push("/dashboard/budgets");
       }
     };
 
