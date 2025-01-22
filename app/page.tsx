@@ -3,11 +3,55 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { MobileNav } from "@/components/ui/mobile-nav";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/supabase";
+import { Pacifico } from "next/font/google";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+const pacifico = Pacifico({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+
+      // Listen for auth changes
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+    };
+
+    getUser();
+  }, [supabase]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
       {/* Mesh Background */}
@@ -17,44 +61,75 @@ export default function Home() {
       </div>
 
       {/* Navbar */}
-      <nav className="px-4 md:px-6 h-16 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-sm">
-        {/* Logo */}
+      <nav className="sticky top-0 px-4 md:px-6 h-16 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8">
-            <Image
-              src="/logo.svg"
-              alt="CashNado Logo"
-              width={32}
-              height={32}
-              className="w-full h-full"
-            />
-          </div>
-          <span className="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-orange-600">
+          <span
+            className={`${pacifico.className} text-2xl md:text-3xl bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-orange-600 font-extrabold`}
+          >
             CashNado
           </span>
         </div>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-4">
-          <Link href="/login">
-            <Button variant={"outline"}>Login</Button>
-          </Link>
-          <Link href="/register">
-            <Button variant={"default"}>Register</Button>
-          </Link>
+          {!loading && (
+            <>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative p-0">
+                      <Avatar>
+                        <AvatarFallback>
+                          {user.email?.[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 rounded-lg border border-gray-100 bg-white p-2 shadow-md"
+                  >
+                    <DropdownMenuItem className="text-sm px-2 py-1.5 text-gray-600">
+                      Signed in as {user.email}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="px-2 py-1.5 hover:bg-gray-50 rounded-md cursor-pointer">
+                      <Link href="/dashboard" className="w-full">
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="px-2 py-1.5 text-red-600 hover:bg-red-50 rounded-md cursor-pointer"
+                      onClick={handleSignOut}
+                    >
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Link href="/sign-in">
+                    <Button variant={"outline"}>Login</Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button variant={"default"}>Register</Button>
+                  </Link>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         {/* Mobile Navigation */}
-        <MobileNav />
+        <MobileNav user={user} onSignOut={handleSignOut} />
       </nav>
 
       {/* Header */}
-      <header className="flex-1 flex items-center justify-center px-4 md:px-6">
-        <div className="max-w-3xl mx-auto text-center">
+      <header className="flex-1 flex items-center justify-center p-4 md:px-6">
+        <div className="w-full max-w-[90%] md:max-w-3xl mx-auto text-center">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6"
           >
             Watch your cash
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-orange-600">
@@ -67,7 +142,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg md:text-xl text-gray-600 mb-8"
+            className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 md:mb-8 px-4"
           >
             Take control of your finances with our powerful tracking and
             budgeting tools
@@ -76,12 +151,19 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
+            className="px-4"
           >
-            <Link href="/register">
-              <InteractiveHoverButton>
-                Start Your Journey
-              </InteractiveHoverButton>
-            </Link>
+            {user ? (
+              <Link href="/dashboard">
+                <InteractiveHoverButton>Go to Dashboard</InteractiveHoverButton>
+              </Link>
+            ) : (
+              <Link href="/register">
+                <InteractiveHoverButton>
+                  Start Your Journey
+                </InteractiveHoverButton>
+              </Link>
+            )}
           </motion.div>
         </div>
       </header>
