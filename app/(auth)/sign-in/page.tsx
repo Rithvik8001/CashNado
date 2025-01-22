@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useUser } from "@/lib/store/user";
 
 export default function SignIn() {
   const router = useRouter();
@@ -12,13 +13,14 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
+  const setUser = useUser((state) => state.setUser);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -29,8 +31,11 @@ export default function SignIn() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    if (data.user) {
+      setUser(data.user);
+      router.push("/dashboard");
+      router.refresh();
+    }
   };
 
   const handleGoogleSignIn = async () => {
