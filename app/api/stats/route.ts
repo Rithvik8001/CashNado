@@ -2,10 +2,14 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { type Prisma } from "@prisma/client";
 
-type Budget = Prisma.BudgetGetPayload<{}>;
-type Expense = Prisma.ExpenseGetPayload<{}>;
+type Budget = {
+  amount: number;
+};
+
+type Expense = {
+  amount: number;
+};
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -25,6 +29,9 @@ export async function GET(): Promise<NextResponse> {
       where: {
         userId: session.user.id,
       },
+      select: {
+        amount: true,
+      },
     });
 
     const expenses = await prisma.expense.findMany({
@@ -32,6 +39,9 @@ export async function GET(): Promise<NextResponse> {
         budget: {
           userId: session.user.id,
         },
+      },
+      select: {
+        amount: true,
       },
     });
 

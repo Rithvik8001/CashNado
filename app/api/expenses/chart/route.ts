@@ -2,9 +2,10 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { type Prisma } from "@prisma/client";
 
-type ChartExpense = Pick<Prisma.ExpenseGetPayload<{}>, "id" | "amount"> & {
+type ChartExpense = {
+  id: string;
+  amount: number;
   date: Date;
 };
 
@@ -25,7 +26,7 @@ export async function GET(): Promise<NextResponse> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const expenses = (await prisma.expense.findMany({
+    const expenses = await prisma.expense.findMany({
       select: {
         id: true,
         amount: true,
@@ -42,7 +43,7 @@ export async function GET(): Promise<NextResponse> {
       orderBy: {
         date: "asc",
       },
-    })) as ChartExpense[];
+    });
 
     const dailyExpenses = new Map<string, number>();
     const labels: string[] = [];

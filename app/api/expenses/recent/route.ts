@@ -2,9 +2,14 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { type Prisma } from "@prisma/client";
 
-type Expense = Prisma.ExpenseGetPayload<{}>;
+type Expense = {
+  id: string;
+  title: string;
+  amount: number;
+  category: string;
+  date: Date;
+};
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -26,6 +31,13 @@ export async function GET(): Promise<NextResponse> {
           userId: session.user.id,
         },
       },
+      select: {
+        id: true,
+        title: true,
+        amount: true,
+        category: true,
+        date: true,
+      },
       orderBy: {
         date: "desc",
       },
@@ -34,7 +46,7 @@ export async function GET(): Promise<NextResponse> {
 
     return NextResponse.json(expenses);
   } catch (error) {
-    console.error("Error in /api/expenses/recent:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("[RECENT_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }
