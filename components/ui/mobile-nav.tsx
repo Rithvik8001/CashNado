@@ -1,13 +1,12 @@
-"use client";
-
-import { useState } from "react";
+import { User } from "@supabase/auth-helpers-nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
 
 interface MobileNavProps {
-  user: any;
+  user: User | null;
   onSignOut: () => Promise<void>;
 }
 
@@ -60,8 +59,9 @@ export const MobileNav = ({ user, onSignOut }: MobileNavProps) => {
                   <div className="text-center mb-8">
                     <div className="mx-auto mb-4 flex justify-center">
                       <Avatar className="h-16 w-16">
-                        <AvatarFallback className="text-2xl">
-                          {user.email?.[0].toUpperCase()}
+                        <AvatarImage src={user.user_metadata.avatar_url} />
+                        <AvatarFallback>
+                          {user.email?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </div>

@@ -21,7 +21,16 @@ export async function GET() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const expenses = await prisma.expense.findMany({
+    const expenses: {
+      id: string;
+      amount: number;
+      date: Date;
+    }[] = await prisma.expense.findMany({
+      select: {
+        id: true,
+        amount: true,
+        date: true,
+      },
       where: {
         budget: {
           userId: session.user.id,

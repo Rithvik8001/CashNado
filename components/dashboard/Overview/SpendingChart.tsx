@@ -1,7 +1,5 @@
 "use client";
 
-import { FC } from "react";
-import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,8 +9,15 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartOptions,
+  type ChartData,
+  type ChartOptions,
+  type TooltipItem,
+  type ScriptableContext,
 } from "chart.js";
+import { Line } from "react-chartjs-2";
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 ChartJS.register(
   CategoryScale,
@@ -24,112 +29,131 @@ ChartJS.register(
   Legend
 );
 
-interface ChartData {
+interface SpendingChartProps {
+  className?: string;
+}
+
+interface ChartResponse {
   labels: string[];
   expenses: number[];
 }
 
-interface Props {
-  chartData: ChartData;
-}
+export function SpendingChart({ className }: SpendingChartProps) {
+  const [chartData, setChartData] = useState<ChartData<"line">>({
+    labels: [],
+    datasets: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-const SpendingChart: FC<Props> = ({ chartData }) => {
-  const data = {
-    labels: chartData.labels,
-    datasets: [
-      {
-        label: "Daily Spending",
-        data: chartData.expenses,
-        borderColor: "rgb(99, 102, 241)",
-        backgroundColor: "rgba(99, 102, 241, 0.1)",
-        tension: 0.4,
-        fill: true,
-        pointStyle: "circle",
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "rgb(99, 102, 241)",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-      },
-    ],
-  };
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const response = await fetch("/api/expenses/chart");
+        if (!response.ok) {
+          throw new Error("Failed to fetch chart data");
+        }
+        const data: ChartResponse = await response.json();
+
+        setChartData({
+          labels: data.labels,
+          datasets: [
+            {
+              label: "Daily Spending",
+              data: data.expenses,
+              borderColor: "rgb(75, 192, 192)",
+              backgroundColor: "rgba(75, 192, 192, 0.5)",
+              tension: 0.4,
+            },
+          ],
+        });
+      } catch (error) {
+        console.error("Error fetching chart data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChartData();
+  }, []);
 
   const options: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false,
+        position: "top" as const,
+        labels: {
+          color: "rgb(156 163 175)",
+          font: {
+            size: 12,
+          },
+        },
       },
       title: {
         display: false,
       },
       tooltip: {
-        backgroundColor: "rgb(255, 255, 255)",
-        titleColor: "rgb(17, 24, 39)",
-        bodyColor: "rgb(17, 24, 39)",
-        bodyFont: {
-          size: 14,
+        backgroundColor: "rgb(31 41 55)",
+        titleFont: {
+          size: 13,
         },
-        padding: 12,
-        borderColor: "rgb(229, 231, 235)",
-        borderWidth: 1,
+        bodyFont: {
+          size: 12,
+        },
+        padding: 10,
+        cornerRadius: 4,
         displayColors: false,
         callbacks: {
-          label: function (context) {
-            return `$${context.parsed.y.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-            })}`;
+          label: function (context: TooltipItem<"line">) {
+            if (typeof context.raw === "number") {
+              return `$${context.raw.toFixed(2)}`;
+            }
+            return "";
           },
         },
       },
     },
     scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "rgb(31 41 55 / 0.1)",
+        },
+        ticks: {
+          color: "rgb(156 163 175)",
+          callback: function (value: number | string) {
+            const numValue =
+              typeof value === "string" ? parseFloat(value) : value;
+            return `$${numValue.toFixed(2)}`;
+          },
+        },
+      },
       x: {
         grid: {
           display: false,
         },
         ticks: {
-          font: {
-            size: 12,
-          },
-          color: "rgb(107, 114, 128)",
-        },
-      },
-      y: {
-        beginAtZero: true,
-        border: {
-          display: false,
-        },
-        grid: {
-          color: "rgb(243, 244, 246)",
-        },
-        ticks: {
-          font: {
-            size: 12,
-          },
-          color: "rgb(107, 114, 128)",
-          callback: function (value: any) {
-            return `$${value.toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-            })}`;
-          },
+          color: "rgb(156 163 175)",
+          maxRotation: 45,
+          minRotation: 45,
         },
       },
     },
   };
 
-  return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Spending Trend</h2>
-        <div className="text-sm text-gray-500">Last 7 Days</div>
-      </div>
-      <div className="h-[300px]">
-        <Line data={data} options={options} />
-      </div>
-    </div>
-  );
-};
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <Skeleton className="h-[350px] w-full" />
+      </Card>
+    );
+  }
 
-export default SpendingChart;
+  return (
+    <Card className={className}>
+      <div className="h-[350px] p-6">
+        <Line options={options} data={chartData} />
+      </div>
+    </Card>
+  );
+}
