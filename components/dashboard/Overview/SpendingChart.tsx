@@ -31,50 +31,35 @@ ChartJS.register(
 
 interface SpendingChartProps {
   className?: string;
+  chartData: {
+    labels: string[];
+    expenses: number[];
+  };
 }
 
-interface ChartResponse {
-  labels: string[];
-  expenses: number[];
-}
-
-export default function SpendingChart({ className }: SpendingChartProps) {
-  const [chartData, setChartData] = useState<ChartData<"line">>({
+export default function SpendingChart({
+  className,
+  chartData,
+}: SpendingChartProps) {
+  const [lineChartData, setLineChartData] = useState<ChartData<"line">>({
     labels: [],
     datasets: [],
   });
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchChartData = async () => {
-      try {
-        const response = await fetch("/api/expenses/chart");
-        if (!response.ok) {
-          throw new Error("Failed to fetch chart data");
-        }
-        const data: ChartResponse = await response.json();
-
-        setChartData({
-          labels: data.labels,
-          datasets: [
-            {
-              label: "Daily Spending",
-              data: data.expenses,
-              borderColor: "rgb(75, 192, 192)",
-              backgroundColor: "rgba(75, 192, 192, 0.5)",
-              tension: 0.4,
-            },
-          ],
-        });
-      } catch (error) {
-        console.error("Error fetching chart data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchChartData();
-  }, []);
+    setLineChartData({
+      labels: chartData.labels,
+      datasets: [
+        {
+          label: "Daily Spending",
+          data: chartData.expenses,
+          borderColor: "rgb(75, 192, 192)",
+          backgroundColor: "rgba(75, 192, 192, 0.5)",
+          tension: 0.4,
+        },
+      ],
+    });
+  }, [chartData]);
 
   const options: ChartOptions<"line"> = {
     responsive: true,
@@ -141,18 +126,10 @@ export default function SpendingChart({ className }: SpendingChartProps) {
     },
   };
 
-  if (isLoading) {
-    return (
-      <Card className={className}>
-        <Skeleton className="h-[350px] w-full" />
-      </Card>
-    );
-  }
-
   return (
     <Card className={className}>
       <div className="h-[350px] p-6">
-        <Line options={options} data={chartData} />
+        <Line options={options} data={lineChartData} />
       </div>
     </Card>
   );
