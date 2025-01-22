@@ -2,11 +2,9 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { PrismaClient } from "@prisma/client/edge";
+import { type Prisma } from "@prisma/client";
 
-type ExpenseWithDate = {
-  id: string;
-  amount: number;
+type ChartExpense = Pick<Prisma.ExpenseGetPayload<{}>, "id" | "amount"> & {
   date: Date;
 };
 
@@ -27,7 +25,7 @@ export async function GET(): Promise<NextResponse> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const expenses: ExpenseWithDate[] = await prisma.expense.findMany({
+    const expenses = (await prisma.expense.findMany({
       select: {
         id: true,
         amount: true,
@@ -44,7 +42,7 @@ export async function GET(): Promise<NextResponse> {
       orderBy: {
         date: "asc",
       },
-    });
+    })) as ChartExpense[];
 
     const dailyExpenses = new Map<string, number>();
     const labels: string[] = [];
@@ -60,14 +58,14 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Sum up expenses by date
-    expenses.forEach((expense: ExpenseWithDate) => {
+    expenses.forEach((expense) => {
       const dateStr = expense.date.toISOString().split("T")[0];
       const currentAmount = dailyExpenses.get(dateStr) || 0;
       dailyExpenses.set(dateStr, currentAmount + expense.amount);
     });
 
     // Fill the data array in the same order as labels
-    labels.forEach((label: string) => {
+    labels.forEach((label) => {
       data.push(dailyExpenses.get(label) || 0);
     });
 
@@ -76,7 +74,7 @@ export async function GET(): Promise<NextResponse> {
       expenses: data,
     });
   } catch (error) {
-    console.error("Error in /api/expenses/chart:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("[CHART_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }

@@ -2,7 +2,10 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { Budget, Expense } from "@prisma/client/edge";
+import { type Prisma } from "@prisma/client";
+
+type Budget = Prisma.BudgetGetPayload<{}>;
+type Expense = Prisma.ExpenseGetPayload<{}>;
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -33,11 +36,11 @@ export async function GET(): Promise<NextResponse> {
     });
 
     const totalBudget = budgets.reduce(
-      (acc: number, budget: Budget) => acc + (budget?.amount ?? 0),
+      (acc: number, budget: Budget) => acc + budget.amount,
       0
     );
     const totalExpenses = expenses.reduce(
-      (acc: number, expense: Expense) => acc + (expense?.amount ?? 0),
+      (acc: number, expense: Expense) => acc + expense.amount,
       0
     );
 
