@@ -2,9 +2,15 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+type ExpenseWithDate = {
+  id: string;
+  amount: number;
+  date: Date;
+};
+
+export async function GET(): Promise<NextResponse> {
   try {
     const supabase = createRouteHandlerClient({
       cookies: cookies,
@@ -21,11 +27,7 @@ export async function GET() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const expenses: {
-      id: string;
-      amount: number;
-      date: Date;
-    }[] = await prisma.expense.findMany({
+    const expenses: ExpenseWithDate[] = await prisma.expense.findMany({
       select: {
         id: true,
         amount: true,
@@ -52,14 +54,14 @@ export async function GET() {
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = date.toISOString().split("T")[0];
       dailyExpenses.set(dateStr, 0);
       labels.push(dateStr);
     }
 
     // Sum up expenses by date
-    expenses.forEach((expense: { date: Date; amount: number }) => {
-      const dateStr = expense.date.toISOString().split('T')[0];
+    expenses.forEach((expense: ExpenseWithDate) => {
+      const dateStr = expense.date.toISOString().split("T")[0];
       const currentAmount = dailyExpenses.get(dateStr) || 0;
       dailyExpenses.set(dateStr, currentAmount + expense.amount);
     });

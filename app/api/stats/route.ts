@@ -2,9 +2,12 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { Budget, Expense } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
-export async function GET() {
+type Budget = Awaited<ReturnType<PrismaClient["budget"]["findFirst"]>>;
+type Expense = Awaited<ReturnType<PrismaClient["expense"]["findFirst"]>>;
+
+export async function GET(): Promise<NextResponse> {
   try {
     const supabase = createRouteHandlerClient({
       cookies: cookies,

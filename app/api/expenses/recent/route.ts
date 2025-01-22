@@ -2,7 +2,9 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { Expense } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+
+type Expense = Awaited<ReturnType<PrismaClient["expense"]["findFirst"]>>;
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -18,7 +20,7 @@ export async function GET(): Promise<NextResponse> {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const expenses: Expense[] = await prisma.expense.findMany({
+    const expenses = await prisma.expense.findMany({
       where: {
         budget: {
           userId: session.user.id,
