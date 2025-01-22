@@ -49,31 +49,25 @@ export async function GET() {
     const data: number[] = [];
 
     // Initialize the last 7 days with 0
-    for (let i = 0; i < 7; i++) {
+    for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
+      const dateStr = date.toISOString().split('T')[0];
       dailyExpenses.set(dateStr, 0);
+      labels.push(dateStr);
     }
 
-    // Sum expenses by date
-    expenses.forEach((expense) => {
-      const dateStr = new Date(expense.date).toISOString().split("T")[0];
-      if (dailyExpenses.has(dateStr)) {
-        dailyExpenses.set(
-          dateStr,
-          dailyExpenses.get(dateStr)! + expense.amount
-        );
-      }
+    // Sum up expenses by date
+    expenses.forEach((expense: { date: Date; amount: number }) => {
+      const dateStr = expense.date.toISOString().split('T')[0];
+      const currentAmount = dailyExpenses.get(dateStr) || 0;
+      dailyExpenses.set(dateStr, currentAmount + expense.amount);
     });
 
-    // Convert to arrays for chart.js
-    Array.from(dailyExpenses.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .forEach(([date, amount]) => {
-        labels.push(new Date(date).toLocaleDateString());
-        data.push(amount);
-      });
+    // Fill the data array in the same order as labels
+    labels.forEach((label: string) => {
+      data.push(dailyExpenses.get(label) || 0);
+    });
 
     return NextResponse.json({
       labels,

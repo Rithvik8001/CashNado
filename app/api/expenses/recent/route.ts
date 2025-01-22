@@ -2,8 +2,9 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Expense } from "@prisma/client";
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     const supabase = createRouteHandlerClient({
       cookies: cookies,
@@ -17,7 +18,7 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const expenses = await prisma.expense.findMany({
+    const expenses: Expense[] = await prisma.expense.findMany({
       where: {
         budget: {
           userId: session.user.id,

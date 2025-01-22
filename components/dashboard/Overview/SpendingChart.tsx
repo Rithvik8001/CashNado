@@ -38,7 +38,7 @@ interface ChartResponse {
   expenses: number[];
 }
 
-export function SpendingChart({ className }: SpendingChartProps) {
+export default function SpendingChart({ className }: SpendingChartProps) {
   const [chartData, setChartData] = useState<ChartData<"line">>({
     labels: [],
     datasets: [],

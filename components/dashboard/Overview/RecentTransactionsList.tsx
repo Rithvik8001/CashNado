@@ -24,7 +24,7 @@ const RecentTransactionsList: FC<RecentTransactionsProps> = ({
         Recent Transactions
       </h2>
       <div className="space-y-4">
-        {transactions.map((transaction) => (
+        {transactions.map((transaction: Transaction) => (
           <div
             key={transaction.id}
             className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-100 transition-all duration-200 hover:shadow-md"
