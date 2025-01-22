@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Expense } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -34,7 +35,7 @@ export async function GET() {
       },
     });
 
-    const dailyExpenses = new Map();
+    const dailyExpenses = new Map<string, number>();
     const labels: string[] = [];
     const data: number[] = [];
 
@@ -50,7 +51,10 @@ export async function GET() {
     expenses.forEach((expense) => {
       const dateStr = new Date(expense.date).toISOString().split("T")[0];
       if (dailyExpenses.has(dateStr)) {
-        dailyExpenses.set(dateStr, dailyExpenses.get(dateStr) + expense.amount);
+        dailyExpenses.set(
+          dateStr,
+          dailyExpenses.get(dateStr)! + expense.amount
+        );
       }
     });
 
